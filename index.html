@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indonesia Space Time Cube Earthquake Watch</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css" rel="stylesheet" />
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <link href="/src/style.css" rel="stylesheet">
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <button id="sidebar-toggle" class="absolute top-4 left-4 z-20 bg-gfw-800 p-2 rounded hover:bg-gfw-700 transition-all shadow-lg border border-slate-600 hidden">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+  </button>
+
+  <div id="sidebar" class="absolute top-0 left-0 h-full w-80 bg-gfw-800 shadow-2xl z-30 transition-transform duration-300 transform translate-x-0 border-r border-slate-700 flex flex-col">
+    
+    <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-gfw-900">
+      <div>
+        <h1 class="text-lg font-bold tracking-wider text-white">STC EQ WATCH V1.0</h1>
+        <p class="text-xs text-slate-400">Indonesia & Adjacent Archipelagoes</p>
+      </div>
+      <button id="sidebar-close" class="text-slate-400 hover:text-white">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto custom-scroll p-5 space-y-6">
+      
+      <div>
+        <h2 class="text-xs uppercase font-bold text-slate-400 mb-3 tracking-widest">Visualization Mode</h2>
+        <div class="flex gap-2 bg-gfw-900 p-1 rounded-lg">
+          <button id="btn-monthly" class="flex-1 py-2 text-xs font-medium rounded bg-slate-700 text-white shadow transition-colors">Monthly</button>
+          <button id="btn-all" class="flex-1 py-2 text-xs font-medium rounded hover:bg-slate-700 text-slate-400 transition-colors">Show All</button>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 italic">
+          *Monthly mode will load all earthquakes that occur in that month. Show All mode will load all the ~20,000 earthquakes from 2015-2025
+        </p>
+      </div>
+
+      <div>
+        <h2 class="text-xs uppercase font-bold text-slate-400 mb-3 tracking-widest">Layers</h2>
+        
+        <label class="flex items-center justify-between cursor-pointer p-3 rounded hover:bg-gfw-700 transition-colors border border-transparent hover:border-slate-600 group">
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"></div>
+            <span class="text-sm group-hover:text-white text-slate-200">Density Heatmap</span>
+          </div>
+          <input type="checkbox" id="toggle-heatmap" class="accent-orange-500 w-4 h-4">
+        </label>
+
+        <label class="flex items-center justify-between cursor-pointer p-3 rounded hover:bg-gfw-700 transition-colors border border-transparent hover:border-slate-600 mt-2 group">
+          <div class="flex items-center gap-3">
+            <div class="w-3 h-3 rounded-sm bg-blue-500 border border-blue-300"></div>
+            <span class="text-sm group-hover:text-white text-slate-200">Emerging Hotspots</span>
+          </div>
+          <input type="checkbox" id="toggle-hotspots" class="accent-blue-500 w-4 h-4">
+        </label>
+      </div>
+      
+      <div id="hotspot-legend-container" class="mt-6">
+        <h2 class="text-xs uppercase font-bold text-slate-400 mb-3 tracking-widest">Hotspot Pattern Legend</h2>
+        <div id="hotspot-legend-items" class="space-y-1 text-sm text-slate-300">
+        </div>
+      </div>
+
+      <div class="bg-gfw-900 rounded p-4 border border-slate-700">
+        <h2 class="text-xs uppercase font-bold text-slate-400 mb-2">Current View Stats</h2>
+        <div class="flex justify-between items-end">
+          <div>
+            <div class="text-3xl font-mono font-light text-white" id="stat-count">0</div>
+            <div class="text-[10px] text-slate-500">Earthquakes</div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm font-mono text-orange-400" id="stat-max-mag">-</div>
+            <div class="text-[10px] text-slate-500">Max Mag</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-xs uppercase font-bold text-slate-400 mb-3 tracking-widest">Magnitude</h2>
+        <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+          <span>&lt; 3</span>
+          <span>5</span>
+          <span>7+</span>
+        </div>
+        <div class="h-2 w-full rounded-full bg-gradient-to-r from-yellow-200 via-orange-500 to-red-900"></div>
+      </div>
+
+    </div>
+
+    <div class="p-4 border-t border-slate-700 text-[10px] text-slate-500 text-center">
+      Data: USGS Earthquake Catalog <br> Processed using ArcGIS Pro Space Time Cube & Emerging Hotspot Analysis tools
+    </div>
+  </div>
+
+  <div id="timeline-container" class="absolute bottom-0 left-0 w-full bg-gfw-900 border-t border-slate-700 z-20 p-4 transition-all duration-300 pl-80">
+    
+    <div class="flex flex-col gap-2">
+      <div class="flex justify-between items-center px-2">
+        <div class="flex items-center gap-4">
+          <button id="play-pause" class="bg-slate-700 hover:bg-white hover:text-slate-900 text-white rounded-full w-10 h-10 flex items-center justify-center transition-all">
+            <svg id="icon-play" class="ml-1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg id="icon-pause" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+          <div>
+            <h3 id="current-date-display" class="text-xl font-mono font-bold text-white">Loading...</h3>
+            <span class="text-xs text-slate-400">Monthly Interval</span>
+          </div>
+        </div>
+        <div class="text-xs text-slate-500 font-mono">
+          2015 - 2025
+        </div>
+      </div>
+
+      <div class="w-full px-2 py-2">
+        <input type="range" id="time-slider" min="0" max="120" value="0" step="1" class="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+        <div class="flex justify-between text-[10px] text-slate-600 mt-1 font-mono select-none">
+          <span>2015</span>
+          <span>'16</span>
+          <span>'17</span>
+          <span>'18</span>
+          <span>'19</span>
+          <span>'20</span>
+          <span>'21</span>
+          <span>'22</span>
+          <span>'23</span>
+          <span>'24</span>
+          <span>2025</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
