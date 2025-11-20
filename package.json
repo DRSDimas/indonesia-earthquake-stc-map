@@ -1,14 +1,14 @@
 {
   "name": "webgis-stc",
+  "homepage": "https://DRSDimas.github.io/indonesia-earthquake-stc-map/",
   "private": true,
   "version": "0.0.0",
   "type": "module",
-
-  "homepage": "https://DRSDimas.github.io/indonesia-earthquake-stc-map/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
   },
   "devDependencies": {
