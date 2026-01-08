@@ -31,7 +31,7 @@ const EHSA_COLOR_MAP = {
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', 
-  center: [118.0, -2.5], 
+  center: [110.0, -2.5], 
   zoom: 4,
   attributionControl: false
 });
